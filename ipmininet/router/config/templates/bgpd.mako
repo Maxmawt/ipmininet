@@ -39,7 +39,28 @@ router bgp ${node.bgpd.asn}
             % endif
         % endif
     % endfor
+% endfor
 
+## TODO Find the correct subnet ?
+% for al in node.bgpd.access_lists:
+    % for e in al.entries:
+ipv6 access-list ${al.name} ${e.prefix} ${e.action}
+    % endfor
+% endfor
+
+% for rm in node.bgpd.route_maps:
+route-map ${rm.name} ${rm.match_policy} ${rm.order}
+    %for match in rm.match_cond:
+        %if match.type == "access_list":
+    match ipv6 address ${match.condition}
+        %endif
+        %if match.type != "access_list":
+    match ipv6 address ${match.type} ${match.condition}
+        %endif
+    %endfor
+   %for action in rm.set_actions:
+    set ${action.type} ${action.value}
+   %endfor
 % endfor
 <%block name="router"/>
 !

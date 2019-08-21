@@ -7,8 +7,7 @@ from ipaddress import ip_network, ip_address
 
 from ipmininet.overlay import Overlay
 from ipmininet.utils import realIntfList
-from .zebra import QuaggaDaemon, Zebra
-
+from .zebra import QuaggaDaemon, Zebra, RouteMap, AccessList, AccessListEntry
 
 BGP_DEFAULT_PORT = 179
 
@@ -54,6 +53,7 @@ def bgp_fullmesh(topo, routers):
     """Establish a full-mesh set of BGP peerings between routers
 
     :param routers: The set of routers peering within each other"""
+
     def _set_peering(x):
         bgp_peering(topo, x[0], x[1])
 
@@ -72,6 +72,12 @@ def ebgp_session(topo, a, b):
     between them."""
     bgp_peering(topo, a, b)
     topo.linkInfo(a, b)['igp_passive'] = True
+
+
+def set_local_pref(topo, local, remote, value, prefix='any'):
+    """Set a local pref on a link between two nodes"""
+    local_pref = topo.getNodeInfo(local, 'bgp_local_pref', dict)
+    local_pref[remote] = (value, remote, prefix)
 
 
 class BGP(QuaggaDaemon):
@@ -94,14 +100,34 @@ class BGP(QuaggaDaemon):
         cfg = super(BGP, self).build()
         cfg.asn = self._node.asn
         cfg.neighbors = self._build_neighbors()
+        cfg.debug = self.options.debug
         cfg.address_families = self._address_families(
             self.options.address_families, cfg.neighbors)
+        cfg.access_lists, cfg.route_maps = self.build_route_map()
         return cfg
+
+    def build_route_map(self):
+        local_preferences = self._node.get('bgp_local_pref', dict)
+        route_maps = []
+        access_lists = []
+        al_cnt = 1
+        try:
+            for _, (local_pref, node, prefix) in local_preferences.iteritems():
+                # TODO What if it's not v6 ?
+                peer = Peer(self._node, node, True)
+                access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
+                route_maps.append(RouteMap(match_cond=(("access_list", "list%d" % al_cnt),),
+                                           set_actions=(("local-preference", local_pref),)))
+                al_cnt += 1
+        except TypeError as e:
+            # Local_pref is empy
+            pass
+        return access_lists, route_maps
 
     def set_defaults(self, defaults):
         """:param debug: the set of debug events that should be logged
         :param address_families: The set of AddressFamily to use"""
-        defaults.address_families = []
+        defaults.address_families = [AF_INET(), AF_INET6()]
         super(BGP, self).set_defaults(defaults)
 
     def _build_neighbors(self):
@@ -115,6 +141,7 @@ class BGP(QuaggaDaemon):
                     neighbors.append(peer)
         return neighbors
 
+    # Define a function that deal wtih the route map function
     def _address_families(self, af, nei):
         """Complete the address families: add extra networks, or activate
         neighbors. The default is to activate all given neighbors"""
@@ -147,6 +174,7 @@ def AF_INET6(*args, **kwargs):
 
 class Peer(object):
     """A BGP peer"""
+
     def __init__(self, base, node, v6=False):
         """:param base: The base router that has this peer
         :param node: The actual peer"""

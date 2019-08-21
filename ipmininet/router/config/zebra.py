@@ -5,9 +5,11 @@ from ipmininet.utils import realIntfList
 from .base import Daemon
 from .utils import ConfigDict
 
-# Zebra actions
+#  Route Map actions
 DENY = 'deny'
 PERMIT = 'permit'
+
+#
 
 
 class QuaggaDaemon(Daemon):
@@ -18,12 +20,12 @@ class QuaggaDaemon(Daemon):
 
     @property
     def startup_line(self):
-        return '{name} -f {cfg} -i {pid} -z {api} -u root {extra}'\
-                .format(name=self.NAME,
-                        cfg=self.cfg_filename,
-                        pid=self._file('pid'),
-                        api=self.zebra_socket,
-                        extra=self.STARTUP_LINE_EXTRA)
+        return '{name} -f {cfg} -i {pid} -z {api} -u root {extra}' \
+            .format(name=self.NAME,
+                    cfg=self.cfg_filename,
+                    pid=self._file('pid'),
+                    api=self.zebra_socket,
+                    extra=self.STARTUP_LINE_EXTRA)
 
     @property
     def zebra_socket(self):
@@ -43,9 +45,9 @@ class QuaggaDaemon(Daemon):
 
     @property
     def dry_run(self):
-        return '{name} -Cf {cfg} -u root'\
-               .format(name=self.NAME,
-                       cfg=self.cfg_filename)
+        return '{name} -Cf {cfg} -u root' \
+            .format(name=self.NAME,
+                    cfg=self.cfg_filename)
 
 
 class Zebra(QuaggaDaemon):
@@ -121,7 +123,7 @@ class AccessList(object):
                         are composing the ACL"""
         AccessList.count += 1
         self.name = name if name else 'acl%d' % AccessList.count
-        self._entries = [e if isinstance(e, AccessListEntry)
+        self.entries = [e if isinstance(e, AccessListEntry)
                          else AccessListEntry(prefix=e)
                          for e in entries]
 
@@ -129,11 +131,11 @@ class AccessList(object):
         """Iterating over this ACL is basically iterating over all entries"""
         return iter(self._entries)
 
-    @property
-    def acl_type():
-        """Return the zebra string describing this ACL
-        (access-list, prefix-list, ...)"""
-        return 'access-list'
+   #  @property
+   #  def acl_type():
+   #      """Return the zebra string describing this ACL
+   #      (access-list, prefix-list, ...)"""
+   #      return 'access-list'
 
 
 class RouteMapEntry(object):
@@ -143,7 +145,8 @@ class RouteMapEntry(object):
     def __init__(self, action=DENY, match=(), prio=10):
         """:param action: Wether routes matching this route map entry will be
                           accepted or not
-        :param match: The set of ACL that will match in this route map entry
+        :param match: The set of ACL that will match in this route map entry, default is none
+        :param Set action List of actions to apply/deny on the matching route
         :param prio: The priority of this route map entry wrt. other in the
                      route map"""
         self.action = action
@@ -155,28 +158,76 @@ class RouteMapEntry(object):
         return iter(self._match)
 
 
+class RouteMapMatchCond(object):
+    """
+    A class representing a RouteMap matching condition
+    """
+    def __init__(self, type, condition):
+        """
+        :param condition: Can be an ip address, the id of an accesss or prefix list
+        :param type: The type of condition access list, prefix list, peer ...
+        """
+        # TODO Check if type is correct
+        self.condition = condition
+        self.type = type
+
+
+class RouteMapSetAction(object):
+    """
+    A class representing a RouteMap set action
+    """
+    def __init__(self, type, value):
+        """
+        :param type: Type of value to me modified
+        :param value: Value to be modified
+        """
+        # TODO Check if type is correct
+        self.type = type
+        self.value = value
+
+
 class RouteMap(object):
     """A class representing a set of route maps applied to a given protocol"""
 
     # Number of route maps
     count = 0
 
-    def __init__(self, name=None, maps=(), proto=()):
-        """:param name: The name of the route-map, defaulting to rm##
-        :param maps: A set of RouteMapEntry,
+    def __init__(self, name=None, match_policy=PERMIT, match_cond=(), set_actions=(), call_action=None, exit_policy=None,
+                 order=10, proto=()):
+        """
+        :param name: The name of the route-map, defaulting to rm##
+        :param match_policy: Deny or permit the actions if the route match the condition
+        :param match_cond: Specify one or more conditions which must be matched if the entry is to be considered further
+        :param call_action: call to an other route map
+        :param exit_policy: An entry may, optionally specify an alternative exit policy if the entry matched
                      or of (action, [acl, acl, ...]) tuples that will compose
                      the route map
-        :param proto: The set of protocols to which this route-map applies"""
+        :param order Priority of the route map compare to others
+        :param proto: The set of protocols to which this route-map applies
+        """
         RouteMap.count += 1
         self.name = name if name else 'rm%d' % RouteMap.count
-        self._entries = [e if isinstance(e, RouteMapEntry)
-                         else RouteMapEntry(action=e[0], match=e[1])
-                         for e in maps]
+        self.match_policy = match_policy
+        self.match_cond = [e if isinstance(e, RouteMapMatchCond)
+                            else RouteMapMatchCond(type=e[0], condition=e[1])
+                            for e in match_cond]
+        self.set_actions = [e if isinstance(e, RouteMapSetAction)
+                             else RouteMapSetAction(type=e[0], value=e[1])
+                             for e in set_actions]
+        self.call_action = call_action
+        self.exit_policy = exit_policy
+        self.order = order
         self.proto = proto
 
-    def __iter__(self):
-        """This Routemap is the set of all its entries"""
-        return iter(self._entries)
+    def __str__(self):
+        base_line = 'route-map '+self.name+' '+self._match_policy+ ' '+self.prio
+        match_conditions = ''
+        # for cond in self._match_cond:
+
+
+    # def __iter__(self):
+    #     """This Routemap is the set of all its entries"""
+    #     return iter(self._entries)
 
     @staticmethod
     @property
