@@ -101,15 +101,16 @@ def set_community(topo, local, remote, value, prefix='any', on_input=True):
     route_maps.append((value, remote, prefix, 'community', on_input))
 
 
-def set_rr(topo, rr, routers):
+def set_rr(topo, rr, peers=()):
     """
     Set rr as route reflector for all router r
+    :param peers:
     :param topo:
     :param rr:
     :param routers:
     :return:
     """
-    for r in routers:
+    for r in peers:
         rr_client = topo.getNodeInfo(rr, 'bgp_rr_info', list)
         bgp_peering(topo, rr, r)
         rr_client.append(r)
