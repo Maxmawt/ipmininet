@@ -118,7 +118,7 @@ class BGP(QuaggaDaemon):
         access_lists = []
         al_cnt = 1
         try:
-            for _, (value, node, prefix, action, on_input) in dict_route_maps.iteritems():
+            for _, (value, node, prefix, action, on_input) in dict_route_maps.items():
                 # TODO Check v4 and v6
                 peer = Peer(self._node, node, True)
                 access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
