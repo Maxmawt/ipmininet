@@ -26,10 +26,12 @@ router bgp ${node.bgpd.asn}
 % for af in node.bgpd.address_families:
     address-family ${af.name}
     % for rm in node.bgpd.route_maps:
-        % if rm.on_input:
-    neighbor ${rm.neighbor} route-map ${rm.name} in
-        % else:
-    neighbor ${rm.neighbor} route-map ${rm.name} out
+        % if rm.neighbor.family == af.name:
+            % if rm.on_input:
+    neighbor ${rm.neighbor.peer} route-map ${rm.name} in
+            % else:
+    neighbor ${rm.neighbor.peer} route-map ${rm.name} out
+            % endif
         % endif
     % endfor
     % for net in af.networks:
@@ -46,9 +48,13 @@ router bgp ${node.bgpd.asn}
             % endif
         % endif
     % endfor
+    %for rr in node.bgpd.rr:
+        %if rr.family == af.name:
+    neighbor ${rr.peer} route-reflector-client
+        %endif
+    %endfor
 % endfor
 
-## TODO Find the correct subnet ?
 % for al in node.bgpd.access_lists:
     % for e in al.entries:
 ipv6 access-list ${al.name} ${e.prefix} ${e.action}
@@ -66,7 +72,11 @@ route-map ${rm.name} ${rm.match_policy} ${rm.order}
         %endif
     %endfor
    %for action in rm.set_actions:
+       %if action.type == 'community':
+    set ${action.type} ${rm.neighbor.asn}:${action.value}
+       %else:
     set ${action.type} ${action.value}
+       %endif
    %endfor
 % endfor
 <%block name="router"/>

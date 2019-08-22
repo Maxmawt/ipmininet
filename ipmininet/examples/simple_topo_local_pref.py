@@ -1,5 +1,5 @@
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_local_pref, set_med
+from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_local_pref, set_med, set_rr
 import ipmininet.router.config.bgp as _bgp
 
 
@@ -49,17 +49,20 @@ class SimpleBGPTopoLocalPref(IPTopo):
         self.addLink(as1r5, as1r6)
         # TODO Add local pref of 99
         self.addLink(as2r1, as1r6)
-        # set_local_pref(self, as1r6, as2r1, 99)
+        set_local_pref(self, as1r6, as2r1, 99)
+        set_med(self, as1r6, as2r1, 50)
         set_med(self, as2r1, as1r6, 50)
+
 
         # TODO Add local pref of 50
         self.addLink(as2r2, as1r5)
-        # set_local_pref(self, as1r5, as2r2, 50)
-        set_med(self, as2r2, as1r5, 80)
+        set_local_pref(self, as1r5, as2r2, 50)
 
         # Add full mesh
         self.addAS(2, (as2r1, as2r2))
-        self.addiBGPFullMesh(1, (as1r1, as1r2, as1r3, as1r4, as1r5, as1r6))
+        self.addAS(1, (as1r1, as1r2, as1r3, as1r4, as1r5, as1r6))
+        set_rr(self, as1r3, (as1r1, as1r2, as1r4, as1r5, as1r6))
+        # self.addiBGPFullMesh(1, (as1r1, as1r2, as1r3, as1r4, as1r5, as1r6))
 
         # Add eBGP session
         ebgp_session(self, as1r6, as2r1)

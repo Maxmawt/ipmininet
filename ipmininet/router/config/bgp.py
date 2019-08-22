@@ -76,14 +76,43 @@ def ebgp_session(topo, a, b):
 
 def set_local_pref(topo, local, remote, value, prefix='any'):
     """Set a local pref on a link between two nodes"""
-    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', dict)
-    route_maps[remote] = (value, remote, prefix, 'local-preference', True)
+    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
+    route_maps.append((value, remote, prefix, 'local-preference', True))
 
 
 def set_med(topo, local, remote, value, prefix='any'):
     """Set bgp med on an exported route"""
-    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', dict)
-    route_maps[remote] = (value, remote, prefix, 'metric', False)
+    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
+    route_maps.append((value, remote, prefix, 'metric', False))
+
+
+def set_community(topo, local, remote, value, prefix='any', on_input=True):
+    """
+    Set community on imported or exported route
+    :param topo:
+    :param local:
+    :param remote:
+    :param value:
+    :param prefix:
+    :param on_input:
+    :return:
+    """
+    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
+    route_maps.append((value, remote, prefix, 'community', on_input))
+
+
+def set_rr(topo, rr, routers):
+    """
+    Set rr as route reflector for all router r
+    :param topo:
+    :param rr:
+    :param routers:
+    :return:
+    """
+    for r in routers:
+        rr_client = topo.getNodeInfo(rr, 'bgp_rr_info', list)
+        bgp_peering(topo, rr, r)
+        rr_client.append(r)
 
 
 class BGP(QuaggaDaemon):
@@ -110,20 +139,33 @@ class BGP(QuaggaDaemon):
         cfg.address_families = self._address_families(
             self.options.address_families, cfg.neighbors)
         cfg.access_lists, cfg.route_maps = self.build_route_map()
+        cfg.rr = self._build_rr()
         return cfg
 
+    def _build_rr(self):
+        rr_info = self._node.get('bgp_rr_info')
+        rr_peers = []
+        if rr_info is not None:
+            for rr in rr_info:
+                for v6 in [True, False]:
+                    peer = Peer(self._node, rr, v6)
+                    if peer.peer:
+                        rr_peers.append(peer)
+        return rr_peers
+
     def build_route_map(self):
-        dict_route_maps = self._node.get('bgp_route_maps', dict)
+        node_route_maps = self._node.get('bgp_route_maps', dict)
         route_maps = []
         access_lists = []
         al_cnt = 1
         try:
-            for _, (value, node, prefix, action, on_input) in dict_route_maps.items():
+            for (value, node, prefix, action, on_input) in node_route_maps:
                 # TODO Check v4 and v6
                 peer = Peer(self._node, node, True)
                 access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
-                route_maps.append(RouteMap(neighbor=peer.peer, on_input=on_input, match_cond=(("access_list", "list%d" % al_cnt),),
-                                           set_actions=((action, value),)))
+                route_maps.append(
+                    RouteMap(neighbor=peer, on_input=on_input, match_cond=(("access_list", "list%d" % al_cnt),),
+                             set_actions=((action, value),)))
                 al_cnt += 1
         except TypeError as e:
             # Local_pref is empy
