@@ -112,7 +112,7 @@ class BGP(QuaggaDaemon):
         access_lists = []
         al_cnt = 1
         try:
-            for _, (local_pref, node, prefix) in local_preferences.iteritems():
+            for _, (local_pref, node, prefix) in local_preferences.items():
                 # TODO What if it's not v6 ?
                 peer = Peer(self._node, node, True)
                 access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
