@@ -5,7 +5,7 @@ from .zebra import Zebra
 from .staticd import STATIC, StaticRoute
 from .ospf import OSPF, OSPFArea
 from .ospf6 import OSPF6
-from .bgp import BGP, AS, iBGPFullMesh, bgp_peering, bgp_fullmesh, ebgp_session
+from .bgp import BGP, AS, iBGPFullMesh, bgp_peering, bgp_fullmesh, ebgp_session, set_local_pref, set_med
 from .radvd import RADVD, AdvPrefix, AdvRDNSS, AdvConnectedPrefix
 from .iptables import IPTables, IP6Tables
 from .sshd import SSHd
@@ -15,6 +15,6 @@ from .openr import Openr, OpenrDomain
 
 __all__ = ['BasicRouterConfig', 'Zebra', 'OSPF', 'OSPF6', 'OSPFArea', 'BGP',
            'AS', 'iBGPFullMesh', 'bgp_peering', 'RouterConfig', 'bgp_fullmesh',
-           'ebgp_session', 'IPTables', 'IP6Tables', 'SSHd', 'RADVD',
+           'ebgp_session', 'set_local_pref', 'set_med','IPTables', 'IP6Tables', 'SSHd', 'RADVD',
            'AdvPrefix', 'AdvConnectedPrefix', 'AdvRDNSS', 'PIMD',
            'STATIC', 'StaticRoute', 'OpenrDaemon', 'Openr', 'OpenrDomain']

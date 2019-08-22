@@ -25,6 +25,13 @@ router bgp ${node.bgpd.asn}
 % endfor
 % for af in node.bgpd.address_families:
     address-family ${af.name}
+    % for rm in node.bgpd.route_maps:
+        % if rm.on_input:
+    neighbor ${rm.neighbor} route-map ${rm.name} in
+        % else:
+    neighbor ${rm.neighbor} route-map ${rm.name} out
+        % endif
+    % endfor
     % for net in af.networks:
     network ${net.with_prefixlen}
     % endfor

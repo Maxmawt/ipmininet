@@ -76,8 +76,14 @@ def ebgp_session(topo, a, b):
 
 def set_local_pref(topo, local, remote, value, prefix='any'):
     """Set a local pref on a link between two nodes"""
-    local_pref = topo.getNodeInfo(local, 'bgp_local_pref', dict)
-    local_pref[remote] = (value, remote, prefix)
+    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', dict)
+    route_maps[remote] = (value, remote, prefix, 'local-preference', True)
+
+
+def set_med(topo, local, remote, value, prefix='any'):
+    """Set bgp med on an exported route"""
+    route_maps = topo.getNodeInfo(local, 'bgp_route_maps', dict)
+    route_maps[remote] = (value, remote, prefix, 'metric', False)
 
 
 class BGP(QuaggaDaemon):
@@ -107,17 +113,17 @@ class BGP(QuaggaDaemon):
         return cfg
 
     def build_route_map(self):
-        local_preferences = self._node.get('bgp_local_pref', dict)
+        dict_route_maps = self._node.get('bgp_route_maps', dict)
         route_maps = []
         access_lists = []
         al_cnt = 1
         try:
-            for _, (local_pref, node, prefix) in local_preferences.iteritems():
-                # TODO What if it's not v6 ?
+            for _, (value, node, prefix, action, on_input) in dict_route_maps.iteritems():
+                # TODO Check v4 and v6
                 peer = Peer(self._node, node, True)
                 access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
-                route_maps.append(RouteMap(match_cond=(("access_list", "list%d" % al_cnt),),
-                                           set_actions=(("local-preference", local_pref),)))
+                route_maps.append(RouteMap(neighbor=peer.peer, on_input=on_input, match_cond=(("access_list", "list%d" % al_cnt),),
+                                           set_actions=((action, value),)))
                 al_cnt += 1
         except TypeError as e:
             # Local_pref is empy

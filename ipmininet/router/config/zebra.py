@@ -193,7 +193,7 @@ class RouteMap(object):
     count = 0
 
     def __init__(self, name=None, match_policy=PERMIT, match_cond=(), set_actions=(), call_action=None, exit_policy=None,
-                 order=10, proto=()):
+                 order=10, proto=(), neighbor=any, on_input=True):
         """
         :param name: The name of the route-map, defaulting to rm##
         :param match_policy: Deny or permit the actions if the route match the condition
@@ -216,6 +216,8 @@ class RouteMap(object):
                              for e in set_actions]
         self.call_action = call_action
         self.exit_policy = exit_policy
+        self.neighbor = neighbor
+        self.on_input = on_input
         self.order = order
         self.proto = proto
 

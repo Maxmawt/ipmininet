@@ -1,5 +1,5 @@
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import RouterConfig, BGP, ebgp_session
+from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_local_pref, set_med
 import ipmininet.router.config.bgp as _bgp
 
 
@@ -37,7 +37,7 @@ class SimpleBGPTopoLocalPref(IPTopo):
         as2r1 = self.addRouter('as2r1')
         as2r1.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/48',)),))
         as2r2 = self.addRouter('as2r2')
-        as2r2.addDaemon(BGP, address_families=(_bgp.AF_INET(networks=('dead:beef::/48',)),))
+        as2r2.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/48',)),))
         
         # Add Links
         self.addLink(as1r1, as1r6)
@@ -49,10 +49,13 @@ class SimpleBGPTopoLocalPref(IPTopo):
         self.addLink(as1r5, as1r6)
         # TODO Add local pref of 99
         self.addLink(as2r1, as1r6)
-        _bgp.set_local_pref(self, as1r6, as2r1, 99)
+        # set_local_pref(self, as1r6, as2r1, 99)
+        set_med(self, as2r1, as1r6, 50)
+
         # TODO Add local pref of 50
         self.addLink(as2r2, as1r5)
-        _bgp.set_local_pref(self, as1r5, as2r2, 50)
+        # set_local_pref(self, as1r5, as2r2, 50)
+        set_med(self, as2r2, as1r5, 80)
 
         # Add full mesh
         self.addAS(2, (as2r1, as2r2))
