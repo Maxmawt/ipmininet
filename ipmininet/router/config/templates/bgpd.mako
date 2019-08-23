@@ -27,11 +27,7 @@ router bgp ${node.bgpd.asn}
     address-family ${af.name}
     % for rm in node.bgpd.route_maps:
         % if rm.neighbor.family == af.name:
-            % if rm.on_input:
-    neighbor ${rm.neighbor.peer} route-map ${rm.name} in
-            % else:
-    neighbor ${rm.neighbor.peer} route-map ${rm.name} out
-            % endif
+    neighbor ${rm.neighbor.peer} route-map ${rm.name} ${rm.direction}
         % endif
     % endfor
     % for net in af.networks:
@@ -57,23 +53,28 @@ router bgp ${node.bgpd.asn}
 
 % for al in node.bgpd.access_lists:
     % for e in al.entries:
-ipv6 access-list ${al.name} ${e.prefix} ${e.action}
+ipv6 access-list ${al.name} ${e.action} ${e.prefix}
     % endfor
+% endfor
+
+% for cl in node.bgpd.community_lists:
+ip community-list standard ${cl.name} permit ${cl.community}
 % endfor
 
 % for rm in node.bgpd.route_maps:
 route-map ${rm.name} ${rm.match_policy} ${rm.order}
     %for match in rm.match_cond:
-        %if match.type == "access_list":
+        %if match.type == "access-list":
     match ipv6 address ${match.condition}
-        %endif
-        %if match.type != "access_list":
+        %elif match.type == "prefix-list" or match.type =='next-hop':
     match ipv6 address ${match.type} ${match.condition}
+        %else:
+    match ${match.type} ${match.condition}
         %endif
     %endfor
    %for action in rm.set_actions:
        %if action.type == 'community':
-    set ${action.type} ${rm.neighbor.asn}:${action.value}
+    set ${action.type} ${action.value} additive
        %else:
     set ${action.type} ${action.value}
        %endif

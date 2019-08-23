@@ -9,6 +9,7 @@ from .utils import ConfigDict
 DENY = 'deny'
 PERMIT = 'permit'
 
+
 #
 
 
@@ -95,6 +96,24 @@ class Zebra(QuaggaDaemon):
             return False
 
 
+class CommunityList(object):
+    """A zebra community-list entry"""
+    # Number of CmL
+    count = 0
+
+    def __init__(self, name=None, action=PERMIT, community=0):
+        """
+
+        :param name:
+        :param action:
+        :param commmunity:
+        """
+        CommunityList.count += 1
+        self.name = name if name else 'cml%d' % CommunityList.count
+        self.action = action
+        self.community = community
+
+
 class AccessListEntry(object):
     """A zebra access-list entry"""
 
@@ -124,18 +143,19 @@ class AccessList(object):
         AccessList.count += 1
         self.name = name if name else 'acl%d' % AccessList.count
         self.entries = [e if isinstance(e, AccessListEntry)
-                         else AccessListEntry(prefix=e)
-                         for e in entries]
+                        else AccessListEntry(prefix=e)
+                        for e in entries]
 
-    def __iter__(self):
-        """Iterating over this ACL is basically iterating over all entries"""
-        return iter(self._entries)
+    # def __iter__(self):
+    #     """Iterating over this ACL is basically iterating over all entries"""
+    #     return iter(self.entries)
 
-   #  @property
-   #  def acl_type():
-   #      """Return the zebra string describing this ACL
-   #      (access-list, prefix-list, ...)"""
-   #      return 'access-list'
+
+#  @property
+#  def acl_type():
+#      """Return the zebra string describing this ACL
+#      (access-list, prefix-list, ...)"""
+#      return 'access-list'
 
 
 class RouteMapEntry(object):
@@ -162,6 +182,7 @@ class RouteMapMatchCond(object):
     """
     A class representing a RouteMap matching condition
     """
+
     def __init__(self, type, condition):
         """
         :param condition: Can be an ip address, the id of an accesss or prefix list
@@ -176,6 +197,7 @@ class RouteMapSetAction(object):
     """
     A class representing a RouteMap set action
     """
+
     def __init__(self, type, value):
         """
         :param type: Type of value to me modified
@@ -192,8 +214,9 @@ class RouteMap(object):
     # Number of route maps
     count = 0
 
-    def __init__(self, name=None, match_policy=PERMIT, match_cond=(), set_actions=(), call_action=None, exit_policy=None,
-                 order=10, proto=(), neighbor=any, on_input=True):
+    def __init__(self, name=None, match_policy=PERMIT, match_cond=(), set_actions=(), call_action=None,
+                 exit_policy=None,
+                 order=10, proto=(), neighbor=any, direction='in'):
         """
         :param name: The name of the route-map, defaulting to rm##
         :param match_policy: Deny or permit the actions if the route match the condition
@@ -209,24 +232,42 @@ class RouteMap(object):
         self.name = name if name else 'rm%d' % RouteMap.count
         self.match_policy = match_policy
         self.match_cond = [e if isinstance(e, RouteMapMatchCond)
-                            else RouteMapMatchCond(type=e[0], condition=e[1])
-                            for e in match_cond]
+                           else RouteMapMatchCond(type=e[0], condition=e[1])
+                           for e in match_cond]
         self.set_actions = [e if isinstance(e, RouteMapSetAction)
-                             else RouteMapSetAction(type=e[0], value=e[1])
-                             for e in set_actions]
+                            else RouteMapSetAction(type=e[0], value=e[1])
+                            for e in set_actions]
         self.call_action = call_action
         self.exit_policy = exit_policy
         self.neighbor = neighbor
-        self.on_input = on_input
+        self.direction = direction
         self.order = order
         self.proto = proto
 
-    def __str__(self):
-        base_line = 'route-map '+self.name+' '+self._match_policy+ ' '+self.prio
-        match_conditions = ''
-        # for cond in self._match_cond:
+    def append_match_cond(self, match_conditions):
+        """
 
+        :return:
+        """
+        for match_condition in match_conditions:
+            exist = False
+            for self_match_condition in self.match_cond:
+                exist = (match_condition.condition == self_match_condition.condition and match_condition.type == self_match_condition.type)
+        if not exist:
+            self.match_cond.append(match_condition)
 
+    def append_set_action(self, set_actions):
+        """
+
+        :param set_actions:
+        :return:
+        """
+        for set_action in set_actions:
+            exist = False
+            for self_set_action in self.set_actions:
+                exist = (set_action.type == self_set_action.type and set_action.value == self_set_action.value)
+            if not exist:
+                self.set_actions.append(set_action)
     # def __iter__(self):
     #     """This Routemap is the set of all its entries"""
     #     return iter(self._entries)

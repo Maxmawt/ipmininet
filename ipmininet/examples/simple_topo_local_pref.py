@@ -1,5 +1,5 @@
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_local_pref, set_med, set_rr
+from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_local_pref, set_med, set_rr, new_access_list, set_community, new_community_list
 import ipmininet.router.config.bgp as _bgp
 
 
@@ -49,14 +49,17 @@ class SimpleBGPTopoLocalPref(IPTopo):
         self.addLink(as1r5, as1r6)
         # TODO Add local pref of 99
         self.addLink(as2r1, as1r6)
-        set_local_pref(self, as1r6, as2r1, 99)
-        set_med(self, as1r6, as2r1, 50)
-        set_med(self, as2r1, as1r6, 50)
+        new_access_list(self, (as1r6, as1r5, as2r1, as2r2), 'all', ('any',))
+        new_community_list(self, (as1r6,), 'loc-pref', '1:80')
+        set_local_pref(self, as1r6, as2r1, 99, filter_type='community', filter_names=('loc-pref',))
+        set_community(self, as2r1, as1r6, '1:80', filter_type='access-list', filter_names=('all',))
+        set_med(self, as1r6, as2r1, 50, filter_type='access-list', filter_names=('all',))
+        set_med(self, as2r1, as1r6, 50, filter_type='access-list', filter_names=('all',))
 
 
         # TODO Add local pref of 50
         self.addLink(as2r2, as1r5)
-        set_local_pref(self, as1r5, as2r2, 50)
+        set_local_pref(self, as1r5, as2r2, 50, filter_type='access-list', filter_names=('all',))
 
         # Add full mesh
         self.addAS(2, (as2r1, as2r2))

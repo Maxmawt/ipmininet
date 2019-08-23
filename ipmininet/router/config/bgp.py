@@ -7,7 +7,8 @@ from ipaddress import ip_network, ip_address
 
 from ipmininet.overlay import Overlay
 from ipmininet.utils import realIntfList
-from .zebra import QuaggaDaemon, Zebra, RouteMap, AccessList, AccessListEntry
+from .zebra import QuaggaDaemon, Zebra, RouteMap, AccessList, AccessListEntry, RouteMapMatchCond, CommunityList, \
+    RouteMapSetAction
 
 BGP_DEFAULT_PORT = 179
 
@@ -74,19 +75,52 @@ def ebgp_session(topo, a, b):
     topo.linkInfo(a, b)['igp_passive'] = True
 
 
-def set_local_pref(topo, local, remote, value, prefix='any'):
+def set_local_pref(topo, local, remote, value, filter_names, filter_type):
     """Set a local pref on a link between two nodes"""
+    match_cond = []
+    for filter_name in filter_names:
+        match_cond.append(RouteMapMatchCond(filter_type, filter_name))
     route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
-    route_maps.append((value, remote, prefix, 'local-preference', True))
+    route_maps.append((value, remote, match_cond, 'local-preference', 'in'))
 
 
-def set_med(topo, local, remote, value, prefix='any'):
+def set_med(topo, local, remote, value, filter_names, filter_type):
     """Set bgp med on an exported route"""
+    match_cond = []
+    for filter_name in filter_names:
+        match_cond.append(RouteMapMatchCond(filter_type, filter_name))
     route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
-    route_maps.append((value, remote, prefix, 'metric', False))
+    route_maps.append((value, remote, match_cond, 'metric', 'out'))
 
 
-def set_community(topo, local, remote, value, prefix='any', on_input=True):
+def new_access_list(topo, locals, name, entries=()):
+    """
+    Create a new access list for the router local
+    :param topo:
+    :param name:
+    :param entries:
+    :return:
+    """
+    for local in locals:
+        access_lists = topo.getNodeInfo(local, 'bgp_access_lists', list)
+        access_lists.append(AccessList(name=name, entries=entries))
+
+
+def new_community_list(topo, locals, name, community):
+    """
+    Create a new community list for the router local
+    :param topo:
+    :param local:
+    :param name:
+    :param community:
+    :return:
+    """
+    for local in locals:
+        community_lists = topo.getNodeInfo(local, 'bgp_community_lists', list)
+        community_lists.append(CommunityList(name=name, community=community))
+
+
+def set_community(topo, local, remote, value, filter_names, filter_type, direction='out'):
     """
     Set community on imported or exported route
     :param topo:
@@ -94,11 +128,13 @@ def set_community(topo, local, remote, value, prefix='any', on_input=True):
     :param remote:
     :param value:
     :param prefix:
-    :param on_input:
     :return:
     """
+    match_cond = []
+    for filter_name in filter_names:
+        match_cond.append(RouteMapMatchCond(filter_type, filter_name))
     route_maps = topo.getNodeInfo(local, 'bgp_route_maps', list)
-    route_maps.append((value, remote, prefix, 'community', on_input))
+    route_maps.append((value, remote, match_cond, 'community', direction))
 
 
 def set_rr(topo, rr, peers=()):
@@ -139,7 +175,9 @@ class BGP(QuaggaDaemon):
         cfg.debug = self.options.debug
         cfg.address_families = self._address_families(
             self.options.address_families, cfg.neighbors)
-        cfg.access_lists, cfg.route_maps = self.build_route_map()
+        cfg.access_lists = self.build_access_list()
+        cfg.community_lists = self._node.get('bgp_community_lists') if self._node.get('bgp_community_lists') else []
+        cfg.route_maps = self.build_route_map()
         cfg.rr = self._build_rr()
         return cfg
 
@@ -154,24 +192,34 @@ class BGP(QuaggaDaemon):
                         rr_peers.append(peer)
         return rr_peers
 
-    def build_route_map(self):
-        node_route_maps = self._node.get('bgp_route_maps', dict)
-        route_maps = []
+    def build_access_list(self):
+        node_access_lists = self._node.get('bgp_access_lists')
         access_lists = []
-        al_cnt = 1
-        try:
-            for (value, node, prefix, action, on_input) in node_route_maps:
-                # TODO Check v4 and v6
+        if node_access_lists is not None:
+            for acl_entries in node_access_lists:
+                access_lists.append(AccessList(name=acl_entries.name, entries=acl_entries.entries))
+        return access_lists
+
+    def build_route_map(self):
+        node_route_maps = self._node.get('bgp_route_maps')
+        route_maps = []
+        if node_route_maps is not None:
+            for (value, node, match_cond, action, direction) in node_route_maps:
                 peer = Peer(self._node, node, True)
-                access_lists.append(AccessList(name="list%d" % al_cnt, entries=((AccessListEntry("permit", prefix)),)))
-                route_maps.append(
-                    RouteMap(neighbor=peer, on_input=on_input, match_cond=(("access_list", "list%d" % al_cnt),),
-                             set_actions=((action, value),)))
-                al_cnt += 1
-        except TypeError as e:
-            # Local_pref is empy
-            pass
-        return access_lists, route_maps
+                if not route_maps:
+                    route_maps.append(
+                        RouteMap(neighbor=peer, direction=direction,  match_cond=match_cond,
+                                 set_actions=((action, value),)))
+                else:
+                    for route_map in route_maps:
+                        if route_map.neighbor.peer == peer.peer and route_map.direction == direction:
+                            route_map.append_match_cond(match_cond)
+                            route_map.append_set_action((RouteMapSetAction(action, value),))
+                        else:
+                            route_maps.append(
+                                RouteMap(neighbor=peer, direction=direction,  match_cond=match_cond,
+                                         set_actions=((action, value),)))
+        return route_maps
 
     def set_defaults(self, defaults):
         """:param debug: the set of debug events that should be logged
