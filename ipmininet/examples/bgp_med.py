@@ -23,17 +23,23 @@ class BGPTopoMed(IPTopo):
 		"""
         # Add all routers
         as1r1 = self.addRouter('as1r1')
-        as1r1.addDaemon(BGP)
+        as1r1.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as1r2 = self.addRouter('as1r2')
-        as1r2.addDaemon(BGP)
+        as1r2.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as1r3 = self.addRouter('as1r3')
-        as1r3.addDaemon(BGP)
+        as1r3.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as1r4 = self.addRouter('as1r4')
-        as1r4.addDaemon(BGP)
+        as1r4.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as1r5 = self.addRouter('as1r5')
-        as1r5.addDaemon(BGP)
+        as1r5.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as1r6 = self.addRouter('as1r6')
-        as1r6.addDaemon(BGP)
+        as1r6.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as4r1 = self.addRouter('as4r1')
         as4r1.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
         as4r2 = self.addRouter('as4r2')
