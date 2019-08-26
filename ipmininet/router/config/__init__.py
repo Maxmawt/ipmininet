@@ -18,4 +18,4 @@ __all__ = ['BasicRouterConfig', 'Zebra', 'OSPF', 'OSPF6', 'OSPFArea', 'BGP',
            'ebgp_session', 'set_local_pref', 'set_med', 'set_community', 'new_community_list'
 ,'set_rr', 'new_access_list', 'IPTables', 'IP6Tables', 'SSHd', 'RADVD',
            'AdvPrefix', 'AdvConnectedPrefix', 'AdvRDNSS', 'PIMD',
-           'STATIC', 'StaticRoute', 'OpenrDaemon', 'Openr', 'OpenrDomain']
+           'STATIC', 'StaticRoute', 'OpenrDaemon', 'Openr', 'OpenrDomain', 'AF_INET', 'AF_INET6']
