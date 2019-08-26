@@ -1,6 +1,5 @@
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_rr
-import ipmininet.router.config.bgp as _bgp
+from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_rr, AF_INET6
 
 
 class BGPTopoRR(IPTopo):
@@ -44,7 +43,7 @@ class BGPTopoRR(IPTopo):
         as3r1 = self.addRouter('as3r1')
         as3r1.addDaemon(BGP)
         as2r1 = self.addRouter('as2r1')
-        as2r1.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/32',)),))
+        as2r1.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
         as2h1 = self.addHost("as2h1")
         as1h1 = self.addHost("as1h1")
         as1h2 = self.addHost("as1h2")

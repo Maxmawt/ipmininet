@@ -1,6 +1,5 @@
 from ipmininet.iptopo import IPTopo
-from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_med, new_access_list
-import ipmininet.router.config.bgp as _bgp
+from ipmininet.router.config import RouterConfig, BGP, ebgp_session, set_med, new_access_list, AF_INET6
 
 
 class BGPTopoMed(IPTopo):
@@ -36,9 +35,9 @@ class BGPTopoMed(IPTopo):
         as1r6 = self.addRouter('as1r6')
         as1r6.addDaemon(BGP)
         as4r1 = self.addRouter('as4r1')
-        as4r1.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/32',)),))
+        as4r1.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
         as4r2 = self.addRouter('as4r2')
-        as4r2.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/32',)),))
+        as4r2.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
         as4h1 = self.addHost("as4h1")
         as1h1 = self.addHost("as1h1")
         as1h2 = self.addHost("as1h2")
