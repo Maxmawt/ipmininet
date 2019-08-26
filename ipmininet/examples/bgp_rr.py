@@ -44,7 +44,13 @@ class BGPTopoRR(IPTopo):
 		as3r1.addDaemon(BGP)
 		as2r1 = self.addRouter('as2r1')
 		as2r1.addDaemon(BGP, address_families=(_bgp.AF_INET6(networks=('dead:beef::/32',)),))
-		h1 = self.addHost("h1")
+		as2h1 = self.addHost("as2h1")
+		as1h1 = self.addHost("as1h1")
+        as1h2 = self.addHost("as1h2")
+        as1h3 = self.addHost("as1h3")
+        as1h4 = self.addHost("as1h4")
+        as1h5 = self.addHost("as1h5")
+        as1h6 = self.addHost("as1h6")
 
 		# Add Links
 		self.addLink(as1r1, as1r6, params1={"ip": ("fd00:1:1::1/48",)},
@@ -77,8 +83,16 @@ class BGPTopoRR(IPTopo):
                      params2={"ip": ("fd00:2:2::2/48",)})
 		self.addLink(as4r1, as4r2, params1={"ip": ("fd00:4:3::1/48",)},
                      params2={"ip": ("fd00:4:3::2/48",)})
-		self.addLink(as2r1, h1, params1={"ip": ("dead:beef::1/32",)},
+		self.addLink(as2r1, as2h1, params1={"ip": ("dead:beef::1/32",)},
                      params2={"ip": ("dead:beef::2/32",)})
+
+		self.addLink(as1r1, as1h1)
+        self.addLink(as1r2, as1h2)
+        self.addLink(as1r3, as1h3)
+        self.addLink(as1r4, as1h4)
+        self.addLink(as1r5, as1h5)
+        self.addLink(as1r6, as1h6)
+
 		set_rr(self, as1r1, peers=[as1r3, as1r2, as1r4, as1r5, as1r6])
 		set_rr(self, as1r5, peers=[as1r1, as1r2, as1r4, as1r3, as1r6])
 
