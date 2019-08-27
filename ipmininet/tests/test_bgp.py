@@ -124,12 +124,12 @@ def test_bgp_daemon_params(bgp_params, expected_cfg):
 
 
 local_pref_paths = [
-    ['as1h1', 'as1r1', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h2', 'as1r2', 'as1r3', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h3', 'as1r3', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h4', 'as1r4', 'as1r5', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h5', 'as1r5', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h6', 'as1r6', 'as4r1', 'as4h1']
+    ['as1r1', 'as1r6', 'dead:beef::'],
+    ['as1r2', 'as1r3', 'as1r6', 'dead:beef::'],
+    ['as1r3', 'as1r6', 'dead:beef::'],
+    ['as1r4', 'as1r5', 'as1r6', 'dead:beef::'],
+    ['as1r5', 'as1r6', 'dead:beef::'],
+    ['as1r6', 'dead:beef::']
 ]
 
 
@@ -139,21 +139,20 @@ def test_bgp_local_pref(expected_paths):
     try:
         net = IPNet(topo=BGPTopoLocalPref())
         net.start()
-        assert_connectivity(net, v6=True)
         for path in expected_paths:
-            assert_path(net, path, v6=True)
+            assert_path(net, path, v6=True, ip_dest=True)
         net.stop()
     finally:
         cleanup()
 
 
 med_paths = [
-    ['as1h1', 'as1r1', 'as1r6', 'as1r5', 'as4r2', 'as4h1'],
-    ['as1h2', 'as1r2', 'as1r4', 'as1r5', 'as4r2', 'as4h1'],
-    ['as1h3', 'as1r3', 'as1r6', 'as1r5', 'as4r2', 'as4h1'],
-    ['as1h4', 'as1r4', 'as1r5', 'as4r2', 'as4h1'],
-    ['as1h5', 'as1r5', 'as4r2', 'as4h1'],
-    ['as1h6', 'as1r6', 'as1r5', 'as4r2', 'as4h1']
+    ['as1r1', 'as1r6', 'as1r5', 'dead:beef::'],
+    ['as1r2', 'as1r4', 'as1r5', 'dead:beef::'],
+    ['as1r3', 'as1r6', 'as1r5', 'dead:beef::'],
+    ['as1r4', 'as1r5', 'dead:beef::'],
+    ['as1r5', 'dead:beef::'],
+    ['as1r6', 'as1r5', 'dead:beef::']
 ]
 
 
@@ -163,21 +162,20 @@ def test_bgp_med(expected_paths):
     try:
         net = IPNet(topo=BGPTopoMed())
         net.start()
-        assert_connectivity(net, v6=True)
         for path in expected_paths:
-            assert_path(net, path, v6=True)
+            assert_path(net, path, v6=True, ip_dest=True)
         net.stop()
     finally:
         cleanup()
 
 
 rr_paths = [
-    ['as1h1', 'as1r1', 'as1r6', 'as5r1', 'as2r1', 'as2h1'],
-    ['as1h2', 'as1r2', 'as1r3', 'as1r6', 'as5r1', 'as1r1', 'as2h1'],
-    ['as1h3', 'as1r3', 'as1r6', 'as5r1', 'as2r1', 'as2h1'],
-    ['as1h4', 'as1r4', 'as4r2', 'as4r1', 'as2r1', 'as1h1'],
-    ['as1h5', 'as1r5', 'as4r1', 'as2r1', 'as2h1'],
-    ['as1h6', 'as1r6', 'as5r1', 'as2r1', 'as2h1']
+    ['as1r1', 'as1r6', 'as5r1', 'dead:beef::'],
+    ['as1r2', 'as1r3', 'as1r6', 'as5r1', 'dead:beef::'],
+    ['as1r3', 'as1r6', 'as5r1', 'dead:beef::'],
+    ['as1r4', 'as4r2', 'as4r1', 'dead:beef::'],
+    ['as1r5', 'as4r1', 'dead:beef::'],
+    ['as1r6', 'as5r1', 'dead:beef::']
 ]
 
 
@@ -187,21 +185,20 @@ def test_bgp_rr(expected_paths):
     try:
         net = IPNet(topo=BGPTopoRR())
         net.start()
-        assert_connectivity(net, v6=True)
         for path in expected_paths:
-            assert_path(net, path, v6=True)
+            assert_path(net, path, v6=True, ip_dest=True)
         net.stop()
     finally:
         cleanup()
 
 
 full_paths = [
-    ['as1h1', 'as1r1', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h2', 'as1r2', 'as1r3', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h3', 'as1r3', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h4', 'as1r4', 'as1r5', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h5', 'as1r5', 'as1r6', 'as4r1', 'as4h1'],
-    ['as1h6', 'as1r6', 'as4r1', 'as4h1']
+    ['as1r1', 'as1r6', 'dead:beef::'],
+    ['as1r2', 'as1r3', 'as1r6', 'dead:beef::'],
+    ['as1r3', 'as1r6', 'dead:beef::'],
+    ['as1r4', 'as1r5', 'as1r6', 'dead:beef::'],
+    ['as1r5', 'as1r6', 'dead:beef::'],
+    ['as1r6', 'dead:beef::']
 ]
 
 
@@ -211,9 +208,8 @@ def test_bgp_full_config(expected_paths):
     try:
         net = IPNet(topo=BGPTopoFull())
         net.start()
-        assert_connectivity(net, v6=True)
         for path in expected_paths:
-            assert_path(net, path, v6=True)
+            assert_path(net, path, v6=True, ip_dest=True)
         net.stop()
     finally:
         cleanup()

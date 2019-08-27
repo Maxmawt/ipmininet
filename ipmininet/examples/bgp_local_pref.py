@@ -47,12 +47,6 @@ class BGPTopoLocalPref(IPTopo):
         as4r2 = self.addRouter('as4r2')
         as4r2.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
         as4h1 = self.addHost("as4h1")
-        as1h1 = self.addHost("as1h1")
-        as1h2 = self.addHost("as1h2")
-        as1h3 = self.addHost("as1h3")
-        as1h4 = self.addHost("as1h4")
-        as1h5 = self.addHost("as1h5")
-        as1h6 = self.addHost("as1h6")
 
         # Add Links
         self.addLink(as1r1, as1r6, params1={"ip": ("fd00:1:1::1/48",)},
@@ -77,12 +71,6 @@ class BGPTopoLocalPref(IPTopo):
                      params2={"ip": ("dead:beef::2/32",)})
         self.addLink(as4r2, as4h1, params1={"ip": ("dead:beef::2/32",)},
                      params2={"ip": ("dead:beef::1/32",)})
-        self.addLink(as1r1, as1h1)
-        self.addLink(as1r2, as1h2)
-        self.addLink(as1r3, as1h3)
-        self.addLink(as1r4, as1h4)
-        self.addLink(as1r5, as1h5)
-        self.addLink(as1r6, as1h6)
 
         new_access_list(self, (as1r6, as1r5), 'all', ('any',))
         set_local_pref(self, as1r6, as4r1, 99, filter_type='access-list', filter_names=('all',))

@@ -39,10 +39,13 @@ def traceroute(net, src, dst_ip, timeout=300):
     assert False, "The network did not converged"
 
 
-def assert_path(net, expected_path, v6=False, timeout=300):
+def assert_path(net, expected_path, v6=False, timeout=300, ip_dest=False):
     src = expected_path[0]
-    dst = expected_path[-1]
-    dst_ip = net[dst].defaultIntf().ip6 if v6 else net[dst].defaultIntf().ip
+    if ip_dest:
+        dst_ip = ip_address(expected_path[-1])
+    else:
+        dst = expected_path[-1]
+        dst_ip = net[dst].defaultIntf().ip6 if v6 else net[dst].defaultIntf().ip
 
     path_ips = traceroute(net, src, dst_ip, timeout=timeout)
 
@@ -53,7 +56,7 @@ def assert_path(net, expected_path, v6=False, timeout=300):
             for itf in n.intfList():
                 itf_ips = itf.ip6s() if v6 else itf.ips()
                 for ip in itf_ips:
-                    if ip.ip == ip_address(path_ip):
+                    if ip.ip == ip_address(path_ip) or ip_address(path_ip) == dst_ip:
                         found = True
                         break
                 if found:
