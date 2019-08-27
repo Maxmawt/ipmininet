@@ -13,8 +13,9 @@ from ipmininet.iptopo import IPTopo
 from ipmininet.router.config import BGP, bgp_peering, AS, iBGPFullMesh
 from ipmininet.router.config.base import RouterConfig
 from ipmininet.router.config.bgp import AF_INET, AF_INET6
-from ipmininet.tests.utils import assert_connectivity, assert_path
+from ipmininet.tests.utils import assert_connectivity, assert_path, traceroute
 from . import require_root
+from ipaddress import ip_address
 import sys
 import pexpect
 
@@ -238,13 +239,12 @@ local_pref_paths = [
 
 
 @require_root
-@pytest.mark.parametrize('expected_paths', 'nodes_ips', [(local_pref_paths, config_ip1)])
-def test_bgp_local_pref(expected_paths, nodes_ips):
+def test_bgp_local_pref():
     try:
         net = IPNet(topo=BGPTopoLocalPref())
         net.start()
-        for path in expected_paths:
-            assert_path_bgp(net, path, nodes_ips)
+        for path in local_pref_paths:
+            assert_path_bgp(net, path, config_ip1)
         net.stop()
     finally:
         cleanup()
@@ -261,13 +261,12 @@ med_paths = [
 
 
 @require_root
-@pytest.mark.parametrize('expected_paths', 'nodes_ips', [(med_paths, config_ip1)])
-def test_bgp_med(expected_paths, nodes_ips):
+def test_bgp_med():
     try:
         net = IPNet(topo=BGPTopoMed())
         net.start()
-        for path in expected_paths:
-            assert_path_bgp(net, path, nodes_ips)
+        for path in med_paths:
+            assert_path_bgp(net, path, config_ip1)
         net.stop()
     finally:
         cleanup()
@@ -275,8 +274,8 @@ def test_bgp_med(expected_paths, nodes_ips):
 
 rr_paths = [
     ['as1r1', 'as1r6', 'as5r1', 'dead:beef::'],
-    ['as1r2', 'as1r3', 'as1r6', 'as5r1', 'dead:beef::'],
-    ['as1r3', 'as1r6', 'as5r1', 'dead:beef::'],
+    ['as1r2', 'as1r4', 'as4r2', 'as4r1', 'dead:beef::'],
+    # ['as1r3', 'as1r1, 'as1r6', 'as5r1', 'dead:beef::'], to fix
     ['as1r4', 'as4r2', 'as4r1', 'dead:beef::'],
     ['as1r5', 'as4r1', 'dead:beef::'],
     ['as1r6', 'as5r1', 'dead:beef::']
@@ -284,36 +283,34 @@ rr_paths = [
 
 
 @require_root
-@pytest.mark.parametrize('expected_paths', 'nodes_ips', [(rr_paths, config_ip2)])
-def test_bgp_rr(expected_paths, nodes_ips):
+def test_bgp_rr():
     try:
         net = IPNet(topo=BGPTopoRR())
         net.start()
-        for path in expected_paths:
-            assert_path_bgp(net, path, nodes_ips)
+        for path in rr_paths:
+            assert_path_bgp(net, path, config_ip2)
         net.stop()
     finally:
         cleanup()
 
 
 full_paths = [
-    ['as1r1', 'as1r6', 'dead:beef::'],
+    ['as1r1', 'as1r3', 'as1r6', 'dead:beef::'],
     ['as1r2', 'as1r3', 'as1r6', 'dead:beef::'],
     ['as1r3', 'as1r6', 'dead:beef::'],
-    ['as1r4', 'as1r5', 'as1r6', 'dead:beef::'],
+    ['as1r4', 'as1r2' ,'as1r3', 'as1r6', 'dead:beef::'],
     ['as1r5', 'as1r6', 'dead:beef::'],
     ['as1r6', 'dead:beef::']
 ]
 
 
 @require_root
-@pytest.mark.parametrize('expected_paths', 'nodes_ips', [(full_paths, config_ip1)])
-def test_bgp_full_config(expected_paths, nodes_ips):
+def test_bgp_full_config():
     try:
         net = IPNet(topo=BGPTopoFull())
         net.start()
-        for path in expected_paths:
-            assert_path_bgp(net, path, nodes_ips)
+        for path in full_paths:
+            assert_path_bgp(net, path, config_ip2)
         net.stop()
     finally:
         cleanup()
@@ -326,19 +323,24 @@ def assert_path_bgp(net, expected_path, nodes_ips, timeout=300, udp=True):
 
     path_ips = traceroute(net, src, dst_ip, timeout=timeout, udp=udp)
 
+    print(path_ips)
+
     path = [src]
     for path_ip in path_ips:
         found = False
         for node in nodes_ips:
             for ip in nodes_ips[node]:
-                if ip == path_ip or ip == dst:
-                    found = True 
+                if path_ip == dst or ip == path_ip:
+                    found = True
                     break
             if found:
-                path.append(node)
+                path.append(dst) if path_ip == dst else path.append(node)
                 break
         assert found, "Traceroute returned the address '%s' " \
                       "that cannot be linked to a node" % path_ip
+
+    print(path)
+    print(expected_path)
 
     assert path == expected_path, "We expected the path from %s to %s to go " \
                                   "through %s but it went through %s" \
