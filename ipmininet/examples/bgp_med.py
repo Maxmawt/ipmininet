@@ -82,7 +82,7 @@ class BGPTopoMed(IPTopo):
         self.addLink(as1r5, as1h5)
         self.addLink(as1r6, as1h6)
 
-        new_access_list(self, (as1r6, as1r5), 'all', ('any',))
+        new_access_list(self, (as4r1, as4r2), 'all', ('any',))
         set_med(self, as4r1, as1r6, 99, filter_type='access-list', filter_names=('all',))
         set_med(self, as4r2, as1r5, 50, filter_type='access-list', filter_names=('all',))
 

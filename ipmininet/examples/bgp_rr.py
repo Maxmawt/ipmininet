@@ -41,22 +41,20 @@ class BGPTopoRR(IPTopo):
         as1r6.addDaemon(BGP, address_families=(
             AF_INET6(redistribute=('connected',)),))
         as4r1 = self.addRouter('as4r1')
-        as4r1.addDaemon(BGP)
+        as4r1.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as4r2 = self.addRouter('as4r2')
-        as4r2.addDaemon(BGP)
+        as4r2.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as5r1 = self.addRouter('as5r1')
-        as5r1.addDaemon(BGP)
+        as5r1.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as3r1 = self.addRouter('as3r1')
-        as3r1.addDaemon(BGP)
+        as3r1.addDaemon(BGP, address_families=(
+            AF_INET6(redistribute=('connected',)),))
         as2r1 = self.addRouter('as2r1')
         as2r1.addDaemon(BGP, address_families=(AF_INET6(networks=('dead:beef::/32',)),))
-        as2h1 = self.addHost("as2h1")
-        as1h1 = self.addHost("as1h1")
-        as1h2 = self.addHost("as1h2")
-        as1h3 = self.addHost("as1h3")
-        as1h4 = self.addHost("as1h4")
-        as1h5 = self.addHost("as1h5")
-        as1h6 = self.addHost("as1h6")
+        as2h1 = self.addHost('as21')
 
         # Add Links
         self.addLink(as1r1, as1r6, params1={"ip": ("fd00:1:1::1/48",)},
@@ -92,12 +90,6 @@ class BGPTopoRR(IPTopo):
         self.addLink(as2r1, as2h1, params1={"ip": ("dead:beef::1/32",)},
                      params2={"ip": ("dead:beef::2/32",)})
 
-        self.addLink(as1r1, as1h1)
-        self.addLink(as1r2, as1h2)
-        self.addLink(as1r3, as1h3)
-        self.addLink(as1r4, as1h4)
-        self.addLink(as1r5, as1h5)
-        self.addLink(as1r6, as1h6)
 
         set_rr(self, as1r1, peers=[as1r3, as1r2, as1r4, as1r5, as1r6])
         set_rr(self, as1r5, peers=[as1r1, as1r2, as1r4, as1r3, as1r6])
