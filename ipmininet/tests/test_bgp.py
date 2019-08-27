@@ -13,7 +13,7 @@ from ipmininet.iptopo import IPTopo
 from ipmininet.router.config import BGP, bgp_peering, AS, iBGPFullMesh
 from ipmininet.router.config.base import RouterConfig
 from ipmininet.router.config.bgp import AF_INET, AF_INET6
-from ipmininet.tests.utils import assert_connectivity
+from ipmininet.tests.utils import assert_connectivity, assert_path
 from . import require_root
 import sys
 import pexpect
@@ -140,7 +140,7 @@ def test_bgp_local_pref(expected_paths):
         net = IPNet(topo=BGPTopoLocalPref())
         net.start()
         for path in expected_paths:
-            assert_path(net, path, v6=True, ip_dest=True)
+            assert_path(net, path, v6=True, ip_dest=True, udp=True)
         net.stop()
     finally:
         cleanup()
@@ -163,7 +163,7 @@ def test_bgp_med(expected_paths):
         net = IPNet(topo=BGPTopoMed())
         net.start()
         for path in expected_paths:
-            assert_path(net, path, v6=True, ip_dest=True)
+            assert_path(net, path, v6=True, ip_dest=True, udp=True)
         net.stop()
     finally:
         cleanup()
@@ -186,7 +186,7 @@ def test_bgp_rr(expected_paths):
         net = IPNet(topo=BGPTopoRR())
         net.start()
         for path in expected_paths:
-            assert_path(net, path, v6=True, ip_dest=True)
+            assert_path(net, path, v6=True, ip_dest=True, udp=True)
         net.stop()
     finally:
         cleanup()
@@ -209,7 +209,7 @@ def test_bgp_full_config(expected_paths):
         net = IPNet(topo=BGPTopoFull())
         net.start()
         for path in expected_paths:
-            assert_path(net, path, v6=True, ip_dest=True)
+            assert_path(net, path, v6=True, ip_dest=True, udp=True)
         net.stop()
     finally:
         cleanup()
