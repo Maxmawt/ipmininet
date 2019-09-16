@@ -14,32 +14,32 @@ import mininet.log
 from ipaddress import ip_address
 
 
-def traceroute(net, src, dst_ip, timeout=300):
+def traceroute(net, src, dst_ip, timeout=600):
     t = 0
     old_path_ips = []
     same_path_count = 0
     white_space = re.compile(r" +")
-    while t != timeout / 5.:
+    while t != timeout * 2:
         out = net[src].cmd(["traceroute", "-w", "0.05", "-q", "1", "-n",
                             "-m", len(net.routers) + len(net.hosts), dst_ip]).split("\n")[1:-1]
         path_ips = [str(white_space.split(line)[2])
                     for line in out if "*" not in line and "!" not in line]
         if len(path_ips) > 0 and path_ips[-1] == str(dst_ip) and old_path_ips == path_ips:
             same_path_count += 1
-            if same_path_count > 2:
+            if same_path_count > 20:
                 # Network has converged
                 return path_ips
         else:
             same_path_count = 0
 
         old_path_ips = path_ips
-        time.sleep(5)
+        time.sleep(0.5)
         t += 1
 
     assert False, "The network did not converged"
 
 
-def assert_path(net, expected_path, v6=False, timeout=300):
+def assert_path(net, expected_path, v6=False, timeout=600):
     src = expected_path[0]
     dst = expected_path[-1]
     dst_ip = net[dst].defaultIntf().ip6 if v6 else net[dst].defaultIntf().ip
